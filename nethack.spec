@@ -4,26 +4,29 @@
 %global fontname nethack-bitmap
 
 Name:           nethack
-Version:        3.6.1
-Release:        1%{?dist}
+Version:        3.6.6
+Release:        4%{?dist}
 Summary:        A rogue-like single player dungeon exploration game
 
-Group:          Amusements/Games
 License:        NGPL
-URL:            http://nethack.org
-Source0:        https://sourceforge.net/projects/%{name}/files/%{name}/%{version}/%{name}-361-src.tgz
+URL:            https://nethack.org
+Source0:        https://www.nethack.org/download/3.6.6/nethack-366-src.tgz
 Source1:        %{name}.desktop
 Patch0:         %{name}-%{version}-makefile.patch
-Patch1:         Makefile.top.patch
+Patch1:         %{name}-%{version}-top.patch
 Patch2:         %{name}-%{version}-config.patch
 Patch3:         %{name}-%{version}-guidebook.patch
+Patch4:         hackdir.patch
 Requires:       %{fontname}-fonts-core
 
+BuildRequires: make
+BuildRequires:  gcc
 BuildRequires:  ncurses-devel
 BuildRequires:  bison, flex, desktop-file-utils
 BuildRequires:  bdftopcf, mkfontdir, libX11-devel, libXaw-devel, libXext-devel
 BuildRequires:  libXmu-devel, libXpm-devel, libXt-devel
 BuildRequires:  fontpackages-devel
+BuildRequires:  bdftopcf
 
 
 %description
@@ -47,28 +50,38 @@ Summary:        Bitmap fonts for Nethack
 BuildArch:      noarch
 Requires:       fontpackages-filesystem
 
+
 %description -n %{fontname}-fonts
 Bitmap fonts for Nethack.
+
 
 %package -n %{fontname}-fonts-core
 Summary:         X11 core fonts configuration for %{fontname}
 BuildArch:      noarch
 Requires:        %{fontname}-fonts
 Requires(post):  %{fontname}-fonts
-Requires(post):  xorg-x11-font-utils
+Requires(post):  mkfontdir
 Requires(post):	 coreutils
 Requires(preun): coreutils
+
 
 %description -n %{fontname}-fonts-core
 X11 core fonts configuration for %{fontname}.
 
 
 %prep
-%setup -q
+%setup -q -c -n nethack-3.6.6
+cd NetHack-NetHack-3.6.6_Released
+mv * ..
+cd ..
+rm -rf NetHack-NetHack-3.6.6_Released
 %patch0 -b .makefile
 %patch1  
 %patch2 -b .config
 %patch3 -b .guidebook
+
+# Extra patches
+%patch4 -p1
 
 %{__sed} -i -e "s:PREFIX=\$(wildcard ~)/nh/install:PREFIX=/usr:" sys/unix/hints/linux
 %{__sed} -i -e "s:^\(HACKDIR=\).*:\1%{nhgamedir}:" sys/unix/hints/linux
@@ -134,9 +147,6 @@ if [ $1 -eq 0 ] ; then
     rm %{_fontdir}/fonts.dir
 fi;
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
 
 %files
 %doc doc/*.txt README dat/license dat/history
@@ -144,8 +154,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man6/*
 %{_datadir}/pixmaps/nethack.xpm
 %{_datadir}/applications/nethack.desktop
-%{nhgamedir}/nhdat
 %{_bindir}/nethack
+%{nhgamedir}
 %defattr(0664,root,games)
 %config(noreplace) %{nhdatadir}/record
 %config(noreplace) %{nhdatadir}/perm
@@ -154,6 +164,7 @@ rm -rf $RPM_BUILD_ROOT
 %attr(0775,root,games) %dir %{nhdatadir}
 %attr(0775,root,games) %dir %{nhdatadir}/save
 %attr(2755,root,games) %{nhgamedir}/nethack
+%config(noreplace) %{nhgamedir}/nhdat
 %config(noreplace) %{nhgamedir}/sysconf
 %config(noreplace) %{nhgamedir}/NetHack.ad
 %config(noreplace) %{nhgamedir}/license
@@ -167,9 +178,51 @@ rm -rf $RPM_BUILD_ROOT
 %_font_pkg -n bitmap *.pcf
 
 %files -n %{fontname}-fonts-core
-%defattr(-,root,root,-)
 
 %changelog
+* Thu Mar 04 2021 Peter Hutterer <peter.hutterer@redhat.com> 3.6.6-4
+- Require only mkfontdir, not all of xorg-x11-font-utils (#1933533)
+
+* Tue Jan 26 2021 Fedora Release Engineering <releng@fedoraproject.org> - 3.6.6-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
+
+* Tue Jul 28 2020 Fedora Release Engineering <releng@fedoraproject.org> - 3.6.6-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
+
+* Tue Mar 10 2020 Ron Olson <tachoknight@gmail.com> - 3.6.6-1
+- Update to NetHack 3.6.6
+
+* Tue Jan 28 2020 Ron Olson <tachoknight@gmail.com> - 3.6.5-1
+- Update to NetHack 3.6.5 and removed gcc 10 patch because
+  the code was properly fixed upstream
+
+* Fri Jan 24 2020 Ron Olson <tachoknight@gmail.com> - 3.6.4-2
+- Added patch to compile properly with gcc 10
+
+* Thu Dec 19 2019 Ron Olson <tachoknight@gmail.com> - 3.6.4-1
+- Update to NetHack 3.6.4
+
+* Mon Dec 09 2019 Ron Olson <tachoknight@gmail.com> - 3.6.3-1
+- Update to NetHack 3.6.3
+
+* Tue Aug 13 2019 Ron Olson <tachoknight@gmail.com> - 3.6.2-3
+- Removed Group tag and clean section
+
+* Thu Jul 25 2019 Fedora Release Engineering <releng@fedoraproject.org> - 3.6.2-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild
+
+* Mon May 13 2019 Ron Olson <tachoknight@gmail.com> - 3.6.2-1
+- Update to NetHack 3.6.2
+
+* Fri Feb 01 2019 Fedora Release Engineering <releng@fedoraproject.org> - 3.6.1-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
+
+* Sun Jul 15 2018 Ron Olson <tachoknight@gmail.com> - 3.6.1-3
+- Added gcc as an explicit build dependency
+
+* Fri Jul 13 2018 Fedora Release Engineering <releng@fedoraproject.org> - 3.6.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
+
 * Wed May 02 2018 Ron Olson <tachoknight@gmail.com> 3.6.1-1
 - First version of 3.6.1
 
